@@ -1,19 +1,20 @@
 package com.deepoove.poi.tl;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.util.HashMap;
-import java.util.Map;
-
+import com.deepoove.poi.XWPFTemplate;
+import com.deepoove.poi.data.PictureRenderData;
+import com.deepoove.poi.tl.mypolicy.ListDataRenderPolicy;
+import com.deepoove.poi.util.BytePictureUtils;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.deepoove.poi.XWPFTemplate;
-import com.deepoove.poi.data.PictureRenderData;
-import com.deepoove.poi.util.BytePictureUtils;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 图片模板
@@ -21,9 +22,9 @@ import com.deepoove.poi.util.BytePictureUtils;
  * @version 1.0.0
  */
 public class PictureRenderTest {
-	
+
 	BufferedImage bufferImage;
-	
+
 	@Before
 	public void init(){
 		bufferImage = BytePictureUtils.newBufferImage(100, 100);
@@ -38,20 +39,28 @@ public class PictureRenderTest {
 	@Test
 	public void testPictureRender() throws Exception {
 		Map<String, Object> datas = new HashMap<String, Object>() {
+			List<PictureRenderData> picList = new ArrayList<PictureRenderData>(){{
+				add(new PictureRenderData(100, 120, "src/test/resources/logo.png"));
+				add(new PictureRenderData(100, 120, ".png", BytePictureUtils.getLocalByteArray(new File("src/test/resources/logo.png"))));
+				add(new PictureRenderData(100, 120, ".png", BytePictureUtils.getBufferByteArray(bufferImage)));
+			}};
 			{
 				//本地图片
-				put("localPicture", new PictureRenderData(100, 120, "src/test/resources/logo.png"));
+				put("localPicture", picList.get(0));
 				//本地图片byte数据
-				put("localBytePicture", new PictureRenderData(100, 120, ".png", BytePictureUtils.getLocalByteArray(new File("src/test/resources/logo.png"))));
-				//网路图片 
+				put("localBytePicture", picList.get(1));
+				//网路图片
 				put("urlPicture", new PictureRenderData(100, 100, ".png", BytePictureUtils.getUrlByteArray("https://avatars3.githubusercontent.com/u/1394854?v=3&s=40")));
 				// java 图片
-				put("bufferImagePicture", new PictureRenderData(100, 120, ".png", BytePictureUtils.getBufferByteArray(bufferImage)));
+				put("bufferImagePicture", picList.get(2));
+				put("pictureList", picList);
 			}
 		};
 
-		XWPFTemplate template = XWPFTemplate.compile("src/test/resources/picture.docx")
-				.render(datas);
+
+		XWPFTemplate template = XWPFTemplate.compile("src/test/resources/picture.docx");
+		template.registerPolicy("pictureList", new ListDataRenderPolicy());
+		template.render(datas);
 
 		FileOutputStream out = new FileOutputStream("out_picture.docx");
 		template.write(out);
